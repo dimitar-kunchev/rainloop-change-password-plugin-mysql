@@ -55,7 +55,7 @@ class ChangePasswordMysqlPlugin extends \RainLoop\Plugins\AbstractPlugin
 		return array(
 			\RainLoop\Plugins\Property::NewInstance('domains')->SetLabel('Allowed Domains')
 				->SetType(\RainLoop\Enumerations\PluginPropertyType::STRING_TEXT)
-				->SetDescription('Allowed domains, space as delimiter')
+				->SetDescription('Allowed domains, space as delimiter. Use * to allow for any configured domains')
 				->SetDefaultValue('domain1.com domain2.com'),
 			\RainLoop\Plugins\Property::NewInstance('mHost')->SetLabel('MySQL Host')
 				->SetDefaultValue('127.0.0.1'),

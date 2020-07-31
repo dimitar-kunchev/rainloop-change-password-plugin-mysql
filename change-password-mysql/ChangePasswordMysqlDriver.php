@@ -193,8 +193,9 @@ class ChangePasswordMysqlDriver implements \RainLoop\Providers\ChangePassword\Ch
 	 */
 	public function PasswordChangePossibility($oAccount)
 	{
-		return $oAccount && $oAccount->Domain() &&
-			\in_array(\strtolower($oAccount->Domain()->Name()), $this->aDomains);
+	    return 
+	       ($oAccount && $oAccount->Domain() && \in_array(\strtolower($oAccount->Domain()->Name()), $this->aDomains)) ||
+	       (\in_array(\strtolower('*'), $this->aDomains));
 	}
 
 	/**
