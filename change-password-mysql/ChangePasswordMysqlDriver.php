@@ -32,6 +32,21 @@ class ChangePasswordMysqlDriver implements \RainLoop\Providers\ChangePassword\Ch
 	 */
 	private $mColumn = '';
 
+	/** 
+	 * @var string
+	 */
+	private $uColumn = '';
+	
+	/**
+	 * @var string
+	 */
+	private $cryptScheme = 'CRAM-MD5';
+	
+	/**
+	 * @var string
+	 */
+	private $doveadmBin = '/usr/bin/doveadm';
+
 	/**
 	 * @var \MailSo\Log\Logger
 	 */
@@ -109,6 +124,39 @@ class ChangePasswordMysqlDriver implements \RainLoop\Providers\ChangePassword\Ch
 	}
 
 	/**
+	 * @param string $uColumn
+	 *
+	 * @return \ChangePasswordMysqlDriver
+	 */
+	public function SetuColumn($uColumn)
+	{
+		$this->uColumn = $uColumn;
+		return $this;
+	}
+	
+	/**
+	 * @param string $cryptScheme
+	 *
+	 * @return \ChangePasswordMysqlDriver
+	 */
+	public function SetCryptScheme($cryptScheme)
+	{
+	    $this->cryptScheme = $cryptScheme;
+	    return $this;
+	}
+	
+	/**
+	 * @param string $doveadmBin
+	 *
+	 * @return \ChangePasswordMysqlDriver
+	 */
+	public function SetDoveadmBin($doveadmBin)
+	{
+	    $this->doveadmBin = $doveadmBin;
+	    return $this;
+	}
+
+	/**
 	 * @param \MailSo\Log\Logger $oLogger
 	 *
 	 * @return \ChangePasswordMysqlDriver
@@ -175,20 +223,32 @@ class ChangePasswordMysqlDriver implements \RainLoop\Providers\ChangePassword\Ch
 		try
 		{
 			$conn = new PDO($dsn,$this->mUser,$this->mPass,$options);
-			$select = $conn->prepare("SELECT $this->mColumn FROM $this->mTable WHERE id = :id LIMIT 1");
+			$select = $conn->prepare("SELECT $this->mColumn FROM $this->mTable WHERE $this->uColumn = :id LIMIT 1");
 			$select->execute(array(
 				':id'     => $oAccount->Email()
 			));
 			
 			$colCrypt = $select->fetchAll(PDO::FETCH_ASSOC);
 			$sCryptPass = $colCrypt[0][$this->mColumn];
-
-			if (0 < strlen($sCryptPass) && crypt($sPrevPassword, $sCryptPass) === $sCryptPass && 7 < mb_strlen($sNewPassword) && 20 > mb_strlen($sNewPassword) && !preg_match('/[^A-Za-z0-9]+/', $sNewPassword))
+			
+			$sPrevPasswordCrypt = ($this->cryptScheme == 'plain' || $this->cryptScheme == '') ?
+			         $sCryptPass :
+			         rtrim(shell_exec(escapeshellcmd($this->doveadmBin." pw -s $this->cryptScheme -p ".escapeshellarg($sPrevPassword))));
+			
+	        $oldPassOK = 0 < strlen($sCryptPass) && $sPrevPasswordCrypt === $sCryptPass;
+            //$this->oLogger->write('Old password: '.($oldPassOK ? "matches" : "mismatch or failed to read from DB"));
+	        $newPassOK = 7 < mb_strlen($sNewPassword); // && !preg_match('/[^A-Za-z0-9]+/', $sNewPassword);
+	        //$this->oLogger->write('New password: '.($newPassOK ? 'acceptable' : 'failed'));
+			
+	        if ($oldPassOK && $newPassOK)
 			{
-				$update = $conn->prepare("UPDATE $this->mTable SET $this->mColumn = :crypt WHERE id = :id");
+				$update = $conn->prepare("UPDATE $this->mTable SET $this->mColumn = :crypt WHERE $this->uColumn = :id");
+				$sNewPasswordCrypt  = ($this->cryptScheme == 'plain' || $this->cryptScheme == '') ?
+				        $sNewPassword :
+				        rtrim(shell_exec(escapeshellcmd($this->doveadmBin. " pw -s $this->cryptScheme -p ".escapeshellarg($sNewPassword))));
 				$update->execute(array(
 					':id'    => $oAccount->Email(),
-					':crypt' => crypt($sNewPassword, '$'.md5(rand()))
+				    ':crypt' => $sNewPasswordCrypt
 				));
 
 

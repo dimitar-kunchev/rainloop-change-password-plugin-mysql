@@ -38,6 +38,9 @@ class ChangePasswordMysqlPlugin extends \RainLoop\Plugins\AbstractPlugin
 						->SetmDatabase($this->Config()->Get('plugin', 'mDatabase', ''))
 						->SetmTable($this->Config()->Get('plugin', 'mTable', ''))
 						->SetmColumn($this->Config()->Get('plugin', 'mColumn', ''))
+						->SetuColumn($this->Config()->Get('plugin', 'uColumn', ''))
+						->SetCryptScheme($this->Config()->Get('plugin', 'cryptScheme', ''))
+						->SetDoveadmBin($this->Config()->Get('plugin', 'doveadmBin', ''))
 				;
 				
 				break;
@@ -61,7 +64,14 @@ class ChangePasswordMysqlPlugin extends \RainLoop\Plugins\AbstractPlugin
 				->SetType(\RainLoop\Enumerations\PluginPropertyType::PASSWORD),
 			\RainLoop\Plugins\Property::NewInstance('mDatabase')->SetLabel('MySQL Database'),
 			\RainLoop\Plugins\Property::NewInstance('mTable')->SetLabel('MySQL Table'),
-			\RainLoop\Plugins\Property::NewInstance('mColumn')->SetLabel('MySQL Column')
+			\RainLoop\Plugins\Property::NewInstance('mColumn')->SetLabel('MySQL Password Column'),
+			\RainLoop\Plugins\Property::NewInstance('uColumn')->SetLabel('MySQL User Column'),
+		    \RainLoop\Plugins\Property::NewInstance('cryptScheme')->SetLabel('Crypt Scheme')
+                ->SetDescription('example: CRMA-MD5 or another dovedam supports. "plain" is just plain text')
+                ->SetDefaultValue('CRAM-MD5'),
+		    \RainLoop\Plugins\Property::NewInstance('doveadmBin')->SetLabel('Path to doveadm')
+    		    ->SetDescription('Path to doveadm binary')
+    		    ->SetDefaultValue('/usr/bin/doveadm')
 		);
 	}
 }
